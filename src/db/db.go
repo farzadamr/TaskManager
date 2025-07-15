@@ -27,7 +27,7 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	}
 	DB, err := gorm.Open(dialector, &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed connect to database")
+		return nil, fmt.Errorf("failed connect to database: %v", err)
 	}
 	log.Println("Database connection established")
 	return DB, nil
@@ -40,7 +40,7 @@ func MigrateModels(db *gorm.DB, models ...interface{}) error {
 	return nil
 }
 
-func ColseDB(db *gorm.DB) {
+func CloseDB(db *gorm.DB) {
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Printf("failed to get database instance: %v", err)
