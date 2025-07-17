@@ -7,12 +7,14 @@ type Config struct {
 	DBPort     string
 	DBUser     string
 	DBPassword string
+	JWTSecret  string
 }
 
 // TODO: read structured config from yml files
 func LoadConfig() *Config {
 	return &Config{
-		DBDriver: "sqlite",
-		DBName:   "test.db",
+		DBDriver:  "sqlite",
+		DBName:    "test.db",
+		JWTSecret: "SECRET",
 	}
 }
