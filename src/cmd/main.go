@@ -3,38 +3,27 @@ package main
 import (
 	"log"
 
+	"github.com/farzadamr/TaskManager/DI"
 	"github.com/farzadamr/TaskManager/api"
 	"github.com/farzadamr/TaskManager/api/validators"
-	"github.com/farzadamr/TaskManager/config"
-	database "github.com/farzadamr/TaskManager/db"
-	"github.com/farzadamr/TaskManager/models"
-	"github.com/farzadamr/TaskManager/repositories"
-	"github.com/farzadamr/TaskManager/services"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	//Load Config
-	cfg := config.LoadConfig()
-
-	// Initialize Database
-	db, err := database.InitDB(cfg)
+	// Initialize Container
+	container, err := DI.NewContainer()
 	if err != nil {
-		log.Fatalf("failed to initialize database: %v", err)
+		log.Fatalf("failed to initialize container: %v", err)
 	}
-	defer database.CloseDB(db)
-
-	//MigrateModels
-	if err := database.MigrateModels(db, &models.Task{}); err != nil {
-		log.Fatalf("failed to migrate models: %v", err)
-	}
-
-	taskRepository := repositories.NewTaskRepository(db)
-	taskService := services.NewTaskService(taskRepository)
+	defer container.Close()
 
 	e := echo.New()
 	e.Validator = validators.NewValidator()
-	api.SetupRoutes(e, taskService)
+	api.SetupRoutes(
+		e,
+		container.AuthHandler,
+		container.TaskHandler,
+	)
 
 	port := ":8080"
 	log.Printf("Server started on port %s", port)

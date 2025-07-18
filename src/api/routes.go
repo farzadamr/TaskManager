@@ -2,19 +2,33 @@ package api
 
 import (
 	"github.com/farzadamr/TaskManager/api/handlers"
-	"github.com/farzadamr/TaskManager/services"
 	"github.com/labstack/echo/v4"
- 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-func SetupRoutes(e *echo.Echo, taskService services.TaskService) {
+func SetupRoutes(e *echo.Echo, handlrs ...interface{}) {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	api := e.Group("/api/v1")
+	var (
+		authHandler *handlers.AuthHandler
+		taskHandler *handlers.TaskHandler
+	)
 
-	taskHandler := handlers.NewTaskHandler(taskService)
+	for _, handler := range handlrs {
+		switch h := handler.(type) {
+		case *handlers.AuthHandler:
+			authHandler = h
+		case *handlers.TaskHandler:
+			taskHandler = h
+		}
+	}
+
+	e.POST("api/v1/register", authHandler.Register)
+	e.POST("api/v1/login", authHandler.Login)
+
+	api := e.Group("/api/v1")
 
 	taskRoutes := api.Group("/tasks")
 	taskRoutes.POST("", taskHandler.CreateTask)
