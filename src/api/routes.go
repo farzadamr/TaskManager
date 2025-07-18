@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/farzadamr/TaskManager/api/handlers"
+	"github.com/farzadamr/TaskManager/api/middlewares"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -12,8 +13,9 @@ func SetupRoutes(e *echo.Echo, handlrs ...interface{}) {
 	e.Use(middleware.CORS())
 
 	var (
-		authHandler *handlers.AuthHandler
-		taskHandler *handlers.TaskHandler
+		authHandler     *handlers.AuthHandler
+		taskHandler     *handlers.TaskHandler
+		categoryHandler *handlers.CategoryHandler
 	)
 
 	for _, handler := range handlrs {
@@ -22,14 +24,26 @@ func SetupRoutes(e *echo.Echo, handlrs ...interface{}) {
 			authHandler = h
 		case *handlers.TaskHandler:
 			taskHandler = h
+		case *handlers.CategoryHandler:
+			categoryHandler = h
 		}
 	}
 
+	// Public routes
 	e.POST("api/v1/register", authHandler.Register)
 	e.POST("api/v1/login", authHandler.Login)
 
+	// Authenticated routes
 	api := e.Group("/api/v1")
+	api.Use(middlewares.JWTAuth)
 
+	// Category Routes
+
+	api.POST("/categories", categoryHandler.CreateCategory)
+	api.GET("/categories", categoryHandler.GetUserCategories)
+	api.DELETE("/categories/:id", categoryHandler.DeleteCategory)
+
+	//Task Routes
 	taskRoutes := api.Group("/tasks")
 	taskRoutes.POST("", taskHandler.CreateTask)
 	taskRoutes.GET("", taskHandler.GetAllTasks)
